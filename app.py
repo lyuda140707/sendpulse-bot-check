@@ -56,7 +56,15 @@ dp.message.middleware(SubscriptionMiddleware())
 # Обробники команд
 @dp.message(Command("start"))
 async def send_welcome(message: types.Message):
-    await message.reply("✅ Ви підписані! Ласкаво просимо до бота!")
+    is_subscribed = await check_subscription(message.from_user.id)
+    if not is_subscribed:
+        await message.answer(
+            "🚫 Щоб користуватись ботом, приєднайтесь до групи:",
+            reply_markup=subscribe_kb
+        )
+        return
+    await message.reply("✅ Ви в групі! Ласкаво просимо!")
+
 
 @dp.message(F.text == "Меню")
 @dp.message(Command("menu"))
