@@ -1,3 +1,4 @@
-flask
-requests
+fastapi
+uvicorn
 aiogram
+aiohttp
