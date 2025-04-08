@@ -1,132 +1,118 @@
 import logging
-import asyncio
+import os
+from fastapi import FastAPI, Request
 from aiogram import Bot, Dispatcher, types, F
 from aiogram.types import TelegramObject, InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.dispatcher.middlewares.base import BaseMiddleware
-from typing import Callable, Dict, Any, Awaitable
 from aiogram.filters import Command
+from aiogram.fsm.storage.memory import MemoryStorage
+from typing import Callable, Dict, Any, Awaitable
+import uvicorn
 
-# Токен та налаштування
-API_TOKEN = '7460110326:AAFZirpV7YU5T-OxwDegP0EemKjX0HUV4Gw'
+# Змінні середовища
+API_TOKEN = os.getenv("BOT_TOKEN")
+WEBHOOK_URL = os.getenv("WEBHOOK_URL")
 GROUP_CHAT_ID = '-1002591662949'
 GROUP_URL = 'https://t.me/proKinotochka'
 
-# Налаштування логування
+# Логування
 logging.basicConfig(level=logging.INFO)
 
-# Ініціалізація бота та диспетчера
+# Ініціалізація
 bot = Bot(token=API_TOKEN)
-dp = Dispatcher()
+dp = Dispatcher(storage=MemoryStorage())
+app = FastAPI()
 
-# Клавіатура для підписки
+# Клавіатура
 subscribe_kb = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text="🔔 Підписатися на групу", url=GROUP_URL)]
 ])
 
-# Функція для перевірки підписки користувача
+# Перевірка підписки
 async def check_subscription(user_id: int) -> bool:
     try:
         chat_member = await bot.get_chat_member(GROUP_CHAT_ID, user_id)
-        logging.info(f"User {user_id} status: {chat_member.status}")
         return chat_member.status in ['member', 'administrator', 'creator']
     except Exception as e:
-        logging.error(f"Помилка перевірки підписки для {user_id}: {e}")
+        logging.error(f"Помилка перевірки підписки: {e}")
         return False
 
-# Middleware для перевірки підписки
+# Middleware
 class SubscriptionMiddleware(BaseMiddleware):
-    async def __call__(
-        self,
-        handler: Callable[[TelegramObject, Dict[str, Any]], Awaitable[Any]],
-        event: TelegramObject,
-        data: Dict[str, Any]
-    ) -> Any:
+    async def __call__(self, handler: Callable[[TelegramObject, Dict[str, Any]], Awaitable[Any]], event: TelegramObject, data: Dict[str, Any]) -> Any:
         if isinstance(event, types.Message):
             if not await check_subscription(event.from_user.id):
                 await event.reply("🚫 Щоб користуватись ботом, підпишіться на групу:", reply_markup=subscribe_kb)
-                return  # Не викликаємо наступний обробник
+                return
         return await handler(event, data)
 
-# Реєстрація middleware
 dp.message.middleware(SubscriptionMiddleware())
 
-# Обробка команди /start
+# Обробники команд
 @dp.message(Command("start"))
 async def send_welcome(message: types.Message):
     await message.reply("✅ Ви підписані! Ласкаво просимо до бота!")
 
-# Інші обробники (Меню, Пошук, тощо) – без змін
-
 @dp.message(F.text == "Меню")
-async def menu_text_handler(message: types.Message):
-    await message.reply("Ось ваше меню.")
-
 @dp.message(Command("menu"))
-async def menu_command_handler(message: types.Message):
+async def menu_handler(message: types.Message):
     await message.reply("Ось ваше меню.")
 
 @dp.message(F.text == "Пошук")
-async def search_text_handler(message: types.Message):
-    await message.reply("Функція пошуку.")
-
 @dp.message(Command("poisk"))
-async def search_command_handler(message: types.Message):
+async def search_handler(message: types.Message):
     await message.reply("Функція пошуку.")
 
 @dp.message(F.text == "Список серіалів")
-async def serials_text_handler(message: types.Message):
-    await message.reply("Список серіалів.")
-
 @dp.message(Command("serialiv"))
-async def serials_command_handler(message: types.Message):
+async def serials_handler(message: types.Message):
     await message.reply("Список серіалів.")
 
 @dp.message(F.text == "За жанром")
-async def genres_text_handler(message: types.Message):
-    await message.reply("Серіали за жанром.")
-
 @dp.message(Command("zhanrom"))
-async def genres_command_handler(message: types.Message):
+async def genres_handler(message: types.Message):
     await message.reply("Серіали за жанром.")
 
 @dp.message(F.text == "Мультики")
-async def cartoons_text_handler(message: types.Message):
-    await message.reply("Мультики.")
-
 @dp.message(Command("multik"))
-async def cartoons_command_handler(message: types.Message):
+async def cartoons_handler(message: types.Message):
     await message.reply("Мультики.")
 
 @dp.message(F.text == "Фільми")
-async def movies_text_handler(message: types.Message):
-    await message.reply("Фільми.")
-
 @dp.message(Command("filmi"))
-async def movies_command_handler(message: types.Message):
+async def movies_handler(message: types.Message):
     await message.reply("Фільми.")
 
 @dp.message(F.text == "Запросити друга")
-async def invite_text_handler(message: types.Message):
-    await message.reply("Запросіть друга за цим посиланням...")
-
 @dp.message(Command("zaprosy"))
-async def invite_command_handler(message: types.Message):
+async def invite_handler(message: types.Message):
     await message.reply("Запросіть друга за цим посиланням...")
-
-@dp.message(Command("pereglyad"))
-async def view_handler(message: types.Message):await message.reply("📺 Перегляд серіалів.")
 
 @dp.message(F.text == "Перегляд")
-async def view_text_handler(message: types.Message):
+@dp.message(Command("pereglyad"))
+async def view_handler(message: types.Message):
     await message.reply("📺 Перегляд серіалів.")
 
 @dp.message()
 async def fallback_handler(message: types.Message):
     await message.reply("ℹ️ Невідома команда. Використовуйте меню або кнопки.")
 
-async def main():
-    await dp.start_polling(bot)
+# FastAPI endpoints
+@app.post("/webhook")
+async def webhook_handler(request: Request):
+    data = await request.json()
+    update = TelegramObject.model_validate(data)
+    await dp.feed_update(bot, update)
+    return {"status": "ok"}
 
-# Запуск бота
-if __name__ == '__main__':
-    asyncio.run(dp.start_polling(bot))
+@app.on_event("startup")
+async def on_startup():
+    await bot.set_webhook(WEBHOOK_URL)
+
+@app.on_event("shutdown")
+async def on_shutdown():
+    await bot.delete_webhook()
+
+# Запуск
+if __name__ == "__main__":
+    uvicorn.run("bot:app", host="0.0.0.0", port=int(os.getenv("PORT", 8000)))
