@@ -39,11 +39,16 @@ async def check_subscription(user_id: int) -> bool:
 
 # Middleware
 class SubscriptionMiddleware(BaseMiddleware):
-    async def __call__(self, handler: Callable[[TelegramObject, Dict[str, Any]], Awaitable[Any]], event: TelegramObject, data: Dict[str, Any]) -> Any:
+    async def __call__(self, handler: Callable[[TelegramObject, Dict[str, Any]], Awaitable[Any]],
+                       event: TelegramObject, data: Dict[str, Any]) -> Any:
         if isinstance(event, types.Message):
-            if not await check_subscription(event.from_user.id):
-                await event.reply("🚫 Щоб користуватись ботом, підпишіться на групу:", reply_markup=subscribe_kb)
-                return
+            is_subscribed = await check_subscription(event.from_user.id)
+            if not is_subscribed:
+                await event.answer(
+                    "🚫 Щоб користуватись ботом, підпишіться на групу:",
+                    reply_markup=subscribe_kb
+                )
+                return  # <<< важливо: не викликаємо handler
         return await handler(event, data)
 
 dp.message.middleware(SubscriptionMiddleware())
