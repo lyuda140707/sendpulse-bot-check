@@ -39,16 +39,16 @@ async def check_subscription(user_id: int) -> bool:
 
 # Middleware
 class SubscriptionMiddleware(BaseMiddleware):
-    async def __call__(self, handler: Callable[[TelegramObject, Dict[str, Any]], Awaitable[Any]],
-                       event: TelegramObject, data: Dict[str, Any]) -> Any:
+    async def __call__(
+        self,
+        handler: Callable[[TelegramObject, Dict[str, Any]], Awaitable[Any]],
+        event: TelegramObject,
+        data: Dict[str, Any]
+    ) -> Any:
         if isinstance(event, types.Message):
-            is_subscribed = await check_subscription(event.from_user.id)
-            if not is_subscribed:
-                await event.answer(
-                    "🚫 Щоб користуватись ботом, підпишіться на групу:",
-                    reply_markup=subscribe_kb
-                )
-                return  # <<< важливо: не викликаємо handler
+            if not await check_subscription(event.from_user.id):
+                await event.reply("🚫 Щоб користуватись ботом, підпишіться на групу:", reply_markup=subscribe_kb)
+                return  # Блокуємо доступ
         return await handler(event, data)
 
 dp.message.middleware(SubscriptionMiddleware())
@@ -56,15 +56,7 @@ dp.message.middleware(SubscriptionMiddleware())
 # Обробники команд
 @dp.message(Command("start"))
 async def send_welcome(message: types.Message):
-    is_subscribed = await check_subscription(message.from_user.id)
-    if not is_subscribed:
-        await message.answer(
-            "🚫 Щоб користуватись ботом, приєднайтесь до групи:",
-            reply_markup=subscribe_kb
-        )
-        return
-    await message.reply("✅ Ви в групі! Ласкаво просимо!")
-
+    await message.reply("✅ Ви підписані! Ласкаво просимо до бота!")
 
 @dp.message(F.text == "Меню")
 @dp.message(Command("menu"))
@@ -110,14 +102,20 @@ async def view_handler(message: types.Message):
 async def fallback_handler(message: types.Message):
     await message.reply("ℹ️ Невідома команда. Використовуйте меню або кнопки.")
 
-# FastAPI endpoints
+# Webhook для Telegram
 @app.post("/webhook")
 async def webhook_handler(request: Request):
     data = await request.json()
-    update = TelegramObject.model_validate(data)
-    await dp.feed_update(bot, update)
+    if isinstance(data, list):
+        for item in data:
+            update = TelegramObject.model_validate(item)
+            await dp.feed_update(bot, update)
+    else:
+        update = TelegramObject.model_validate(data)
+        await dp.feed_update(bot, update)
     return {"status": "ok"}
 
+# Запуск webhooks
 @app.on_event("startup")
 async def on_startup():
     await bot.set_webhook(WEBHOOK_URL)
@@ -126,6 +124,6 @@ async def on_startup():
 async def on_shutdown():
     await bot.delete_webhook()
 
-# Запуск
+# Запуск через uvicorn
 if __name__ == "__main__":
     uvicorn.run("app:app", host="0.0.0.0", port=int(os.getenv("PORT", 8000)))
