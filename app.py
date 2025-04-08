@@ -116,6 +116,12 @@ async def webhook_handler(request: Request):
     except Exception as e:
         logging.error(f"Webhook error: {e}")
     return {"status": "ok"}
+    
+@app.post("/sendpulse-webhook")
+async def sendpulse_webhook_handler(request: Request):
+    data = await request.json()
+    logging.info(f"SendPulse надіслав: {data}")
+    return {"status": "Webhook received"}
 
 # Запуск webhooks
 @app.on_event("startup")
