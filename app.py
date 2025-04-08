@@ -8,6 +8,7 @@ from aiogram.filters import Command
 from aiogram.fsm.storage.memory import MemoryStorage
 from typing import Callable, Dict, Any, Awaitable
 import uvicorn
+from aiogram.types import Update
 
 # Змінні середовища
 API_TOKEN = os.getenv("BOT_TOKEN")
@@ -101,10 +102,6 @@ async def view_handler(message: types.Message):
 @dp.message()
 async def fallback_handler(message: types.Message):
     await message.reply("ℹ️ Невідома команда. Використовуйте меню або кнопки.")
-
-# Webhook для Telegram
-@app.post("/webhook")
-from aiogram.types import Update
 
 @app.post("/webhook")
 async def webhook_handler(request: Request):
