@@ -104,15 +104,17 @@ async def fallback_handler(message: types.Message):
 
 # Webhook для Telegram
 @app.post("/webhook")
+from aiogram.types import Update
+
+@app.post("/webhook")
 async def webhook_handler(request: Request):
-    data = await request.json()
-    if isinstance(data, list):
-        for item in data:
-            update = TelegramObject.model_validate(item)
+    try:
+        data = await request.json()
+        if isinstance(data, dict) and "update_id" in data:
+            update = Update.model_validate(data)
             await dp.feed_update(bot, update)
-    else:
-        update = TelegramObject.model_validate(data)
-        await dp.feed_update(bot, update)
+    except Exception as e:
+        logging.error(f"Webhook error: {e}")
     return {"status": "ok"}
 
 # Запуск webhooks
