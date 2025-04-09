@@ -2,3 +2,5 @@ fastapi
 uvicorn
 aiogram
 aiohttp
+python-dotenv
+
