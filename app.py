@@ -44,4 +44,4 @@ async def check_subscription(user_id: int) -> bool:
     try:
         chat_member = await bot.get_chat_member(GROUP_CHAT_ID, user_id)
         return chat_member.status in ['member', 'administrator', 'creator']
-    except Exception as
+     except Exception as e:
