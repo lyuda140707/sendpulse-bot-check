@@ -1,6 +1,7 @@
 import logging
 import os
 from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
 from aiogram import Bot, Dispatcher, types, F
 from aiogram.types import TelegramObject, InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.dispatcher.middlewares.base import BaseMiddleware
@@ -113,7 +114,7 @@ async def webhook_handler(request: Request):
     except Exception as e:
         logging.error(f"Webhook error: {e}")
     return {"status": "ok"}
-    
+
 @app.post("/sendpulse-webhook")
 async def sendpulse_webhook_handler(request: Request):
     try:
@@ -129,13 +130,12 @@ async def sendpulse_webhook_handler(request: Request):
 
         if telegram_id:
             is_subscribed = await check_subscription(int(telegram_id))
-            return {"allowed": is_subscribed}
+            return JSONResponse(content={"allowed": bool(is_subscribed)})
 
-        return {"allowed": False}
+        return JSONResponse(content={"allowed": False})
     except Exception as e:
         logging.error(f"SendPulse error: {e}")
-        return {"allowed": False}
-
+        return JSONResponse(content={"allowed": False})
 
 # Запуск webhooks
 @app.on_event("startup")
@@ -149,7 +149,7 @@ async def on_shutdown():
 @app.get("/")
 async def root():
     return {"status": "OK"}
-    
+
 # Запуск через uvicorn
 if __name__ == "__main__":
     uvicorn.run("app:app", host="0.0.0.0", port=int(os.getenv("PORT", 8000)))
