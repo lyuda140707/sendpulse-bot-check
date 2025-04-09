@@ -1,3 +1,4 @@
+
 import logging
 import os
 from fastapi import FastAPI, Request
@@ -50,7 +51,7 @@ class SubscriptionMiddleware(BaseMiddleware):
         if isinstance(event, types.Message):
             if not await check_subscription(event.from_user.id):
                 await event.reply("🚫 Щоб користуватись ботом, підпишіться на групу:", reply_markup=subscribe_kb)
-                return  # Блокуємо доступ
+                return
         return await handler(event, data)
 
 dp.message.middleware(SubscriptionMiddleware())
@@ -104,17 +105,6 @@ async def view_handler(message: types.Message):
 async def fallback_handler(message: types.Message):
     await message.reply("ℹ️ Невідома команда. Використовуйте меню або кнопки.")
 
-@app.post("/webhook")
-async def webhook_handler(request: Request):
-    try:
-        data = await request.json()
-        if isinstance(data, dict) and "update_id" in data:
-            update = Update.model_validate(data)
-            await dp.feed_update(bot, update)
-    except Exception as e:
-        logging.error(f"Webhook error: {e}")
-    return {"status": "ok"}
-
 @app.post("/sendpulse-webhook")
 async def sendpulse_webhook_handler(request: Request):
     try:
@@ -130,15 +120,13 @@ async def sendpulse_webhook_handler(request: Request):
 
         if telegram_id:
             is_subscribed = await check_subscription(int(telegram_id))
-            return {"allowed": is_subscribed}
-
+            return JSONResponse(content={"allowed": is_subscribed})
 
         return JSONResponse(content={"allowed": False})
     except Exception as e:
         logging.error(f"SendPulse error: {e}")
         return JSONResponse(content={"allowed": False})
 
-# Запуск webhooks
 @app.on_event("startup")
 async def on_startup():
     await bot.set_webhook(WEBHOOK_URL)
@@ -151,6 +139,5 @@ async def on_shutdown():
 async def root():
     return {"status": "OK"}
 
-# Запуск через uvicorn
 if __name__ == "__main__":
     uvicorn.run("app:app", host="0.0.0.0", port=int(os.getenv("PORT", 8000)))
