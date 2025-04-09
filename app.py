@@ -1,4 +1,3 @@
-
 import logging
 import os
 from fastapi import FastAPI, Request
@@ -11,7 +10,6 @@ from aiogram.fsm.storage.memory import MemoryStorage
 from typing import Callable, Dict, Any, Awaitable
 import uvicorn
 from aiogram.types import Update
-
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 
 # Меню-клавіатура
@@ -77,7 +75,6 @@ async def send_welcome(message: types.Message):
 async def help_handler(message: types.Message):
     await message.answer("❓ Натисніть /menu, щоб побачити всі доступні функції.", reply_markup=main_menu)
 
-
 @dp.message(F.text == "Меню")
 @dp.message(Command("menu"))
 async def menu_handler(message: types.Message):
@@ -111,7 +108,15 @@ async def movies_handler(message: types.Message):
 @dp.message(F.text == "Запросити друга")
 @dp.message(Command("zaprosy"))
 async def invite_handler(message: types.Message):
-    await message.reply("Запросіть друга за цим посиланням...")
+    bot_info = await bot.get_me()
+    invite_link = f"https://t.me/{bot_info.username}"
+    invite_kb = InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="🔗 Запросити друга", url=invite_link)]
+    ])
+    await message.answer(
+        "📢 Поділись ботом з друзями! Натисни кнопку нижче 👇",
+        reply_markup=invite_kb
+    )
 
 @dp.message(F.text == "Перегляд")
 @dp.message(Command("pereglyad"))
