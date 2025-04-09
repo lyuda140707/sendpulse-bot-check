@@ -118,17 +118,24 @@ async def webhook_handler(request: Request):
 async def sendpulse_webhook_handler(request: Request):
     try:
         data = await request.json()
-        telegram_id = data.get("telegram_id")
         logging.info(f"SendPulse webhook: {data}")
-        
+
+        if isinstance(data, list) and data:
+            telegram_id = data[0].get("telegram_id")
+        elif isinstance(data, dict):
+            telegram_id = data.get("telegram_id")
+        else:
+            telegram_id = None
+
         if telegram_id:
             is_subscribed = await check_subscription(int(telegram_id))
             return {"allowed": is_subscribed}
-        
+
         return {"allowed": False}
     except Exception as e:
         logging.error(f"SendPulse error: {e}")
         return {"allowed": False}
+
 
 # Запуск webhooks
 @app.on_event("startup")
