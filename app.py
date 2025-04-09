@@ -1,3 +1,4 @@
+
 import logging
 import os
 from fastapi import FastAPI, Request
@@ -44,4 +45,6 @@ async def check_subscription(user_id: int) -> bool:
     try:
         chat_member = await bot.get_chat_member(GROUP_CHAT_ID, user_id)
         return chat_member.status in ['member', 'administrator', 'creator']
-     except Exception as e:
+    except Exception as e:
+        logging.error(f"Помилка перевірки підписки: {e}")
+        return False
