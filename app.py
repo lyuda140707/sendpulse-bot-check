@@ -129,6 +129,10 @@ async def on_startup():
 async def on_shutdown():
     await bot.delete_webhook()
 
+@app.get("/")
+async def root():
+    return {"status": "OK"}
+    
 # Запуск через uvicorn
 if __name__ == "__main__":
     uvicorn.run("app:app", host="0.0.0.0", port=int(os.getenv("PORT", 8000)))
