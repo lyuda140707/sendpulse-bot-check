@@ -3,14 +3,17 @@ import os
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from aiogram import Bot, Dispatcher, types, F
-from aiogram.types import TelegramObject, InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.types import TelegramObject, InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardMarkup, KeyboardButton
 from aiogram.dispatcher.middlewares.base import BaseMiddleware
 from aiogram.filters import Command
 from aiogram.fsm.storage.memory import MemoryStorage
 from typing import Callable, Dict, Any, Awaitable
 import uvicorn
 from aiogram.types import Update
-from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
+from dotenv import load_dotenv
+
+# Завантаження змінних середовища
+load_dotenv()
 
 # Меню-клавіатура
 main_menu = ReplyKeyboardMarkup(
@@ -22,158 +25,23 @@ main_menu = ReplyKeyboardMarkup(
     resize_keyboard=True
 )
 
-# Змінні середовища
 API_TOKEN = os.getenv("BOT_TOKEN")
 WEBHOOK_URL = os.getenv("WEBHOOK_URL")
 GROUP_CHAT_ID = '-1002591662949'
 GROUP_URL = 'https://t.me/proKinotochka'
 
-# Логування
 logging.basicConfig(level=logging.INFO)
 
-# Ініціалізація
 bot = Bot(token=API_TOKEN)
 dp = Dispatcher(storage=MemoryStorage())
 app = FastAPI()
 
-# Клавіатура
 subscribe_kb = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text="🔔 Підписатися на групу", url=GROUP_URL)]
 ])
 
-# Перевірка підписки
 async def check_subscription(user_id: int) -> bool:
     try:
         chat_member = await bot.get_chat_member(GROUP_CHAT_ID, user_id)
         return chat_member.status in ['member', 'administrator', 'creator']
-    except Exception as e:
-        logging.error(f"Помилка перевірки підписки: {e}")
-        return False
-
-# Middleware
-class SubscriptionMiddleware(BaseMiddleware):
-    async def __call__(
-        self,
-        handler: Callable[[TelegramObject, Dict[str, Any]], Awaitable[Any]],
-        event: TelegramObject,
-        data: Dict[str, Any]
-    ) -> Any:
-        if isinstance(event, types.Message):
-            if not await check_subscription(event.from_user.id):
-                await event.reply("🚫 Щоб користуватись ботом, підпишіться на групу:", reply_markup=subscribe_kb)
-                return
-        return await handler(event, data)
-
-dp.message.middleware(SubscriptionMiddleware())
-
-# Обробники команд
-@dp.message(Command("start"))
-async def send_welcome(message: types.Message):
-    if await check_subscription(message.from_user.id):
-        await message.answer("✅ Ви підписані! Ласкаво просимо до бота!\nОбирай жанр, або натисни «Меню» 👇", reply_markup=main_menu)
-    else:
-        await message.answer("🚫 Щоб користуватись ботом, підпишіться на групу:", reply_markup=subscribe_kb)
-
-
-@dp.message(Command("help"))
-async def help_handler(message: types.Message):
-    await message.answer("❓ Натисніть /menu, щоб побачити всі доступні функції.", reply_markup=main_menu)
-
-@dp.message(F.text == "Меню")
-@dp.message(Command("menu"))
-async def menu_handler(message: types.Message):
-    await message.answer("Ось ваше меню:", reply_markup=main_menu)
-
-@dp.message(F.text == "Пошук")
-@dp.message(Command("poisk"))
-async def search_handler(message: types.Message):
-    await message.reply("Функція пошуку.")
-
-@dp.message(F.text == "Список серіалів")
-@dp.message(Command("serialiv"))
-async def serials_handler(message: types.Message):
-    await message.reply("Список серіалів.")
-
-@dp.message(F.text == "За жанром")
-@dp.message(Command("zhanrom"))
-async def genres_handler(message: types.Message):
-    await message.reply("Серіали за жанром.")
-
-@dp.message(F.text == "Мультики")
-@dp.message(Command("multik"))
-async def cartoons_handler(message: types.Message):
-    await message.reply("Мультики.")
-
-@dp.message(F.text == "Фільми")
-@dp.message(Command("filmi"))
-async def movies_handler(message: types.Message):
-    await message.reply("Фільми.")
-
-@dp.message(F.text == "Запросити друга")
-@dp.message(Command("zaprosy"))
-async def invite_handler(message: types.Message):
-    bot_info = await bot.get_me()
-    invite_link = f"https://t.me/{bot_info.username}"
-    invite_kb = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="🔗 Запросити друга", url=invite_link)]
-    ])
-    await message.answer(
-        "📢 Поділись ботом з друзями! Натисни кнопку нижче 👇",
-        reply_markup=invite_kb
-    )
-
-@dp.message(F.text == "Перегляд")
-@dp.message(Command("pereglyad"))
-async def view_handler(message: types.Message):
-    await message.reply("📺 Перегляд серіалів.")
-
-@dp.message()
-async def fallback_handler(message: types.Message):
-    await message.reply("ℹ️ Невідома команда. Використовуйте меню або кнопки.")
-
-@app.post("/sendpulse-webhook")
-async def sendpulse_webhook_handler(request: Request):
-    try:
-        data = await request.json()
-        logging.info(f"SendPulse webhook: {data}")
-
-        if isinstance(data, list) and data:
-            telegram_id = data[0].get("telegram_id")
-        elif isinstance(data, dict):
-            telegram_id = data.get("telegram_id")
-        else:
-            telegram_id = None
-
-        if telegram_id:
-            is_subscribed = await check_subscription(int(telegram_id))
-            return JSONResponse(content={"allowed": is_subscribed})
-
-        return JSONResponse(content={"allowed": False})
-    except Exception as e:
-        logging.error(f"SendPulse error: {e}")
-        return JSONResponse(content={"allowed": False})
-
-@app.on_event("startup")
-async def on_startup():
-    await bot.set_webhook(WEBHOOK_URL, drop_pending_updates=True)
-
-@app.on_event("shutdown")
-async def on_shutdown():
-    await bot.delete_webhook()
-    
-@app.post("/webhook")
-async def telegram_webhook_handler(request: Request):
-    try:
-        data = await request.json()
-        update = Update.model_validate(data)
-        await dp.feed_update(bot, update)
-    except Exception as e:
-        logging.error(f"Telegram Webhook error: {e}")
-    return {"status": "ok"}
-
-@app.get("/")
-async def root():
-    return {"status": "OK"}
-
-if __name__ == "__main__":
-    uvicorn.run("app:app", host="0.0.0.0", port=int(os.getenv("PORT", 8000)))
+    except Exception as
