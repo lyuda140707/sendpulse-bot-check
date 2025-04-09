@@ -160,6 +160,16 @@ async def on_startup():
 @app.on_event("shutdown")
 async def on_shutdown():
     await bot.delete_webhook()
+    
+@app.post("/webhook")
+async def telegram_webhook_handler(request: Request):
+    try:
+        data = await request.json()
+        update = Update.model_validate(data)
+        await dp.feed_update(bot, update)
+    except Exception as e:
+        logging.error(f"Telegram Webhook error: {e}")
+    return {"status": "ok"}
 
 @app.get("/")
 async def root():
