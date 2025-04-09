@@ -129,7 +129,7 @@ async def sendpulse_webhook_handler(request: Request):
 
 @app.on_event("startup")
 async def on_startup():
-    await bot.set_webhook(WEBHOOK_URL)
+    await bot.set_webhook(WEBHOOK_URL, drop_pending_updates=True)
 
 @app.on_event("shutdown")
 async def on_shutdown():
