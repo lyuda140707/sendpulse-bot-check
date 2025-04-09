@@ -12,6 +12,18 @@ from typing import Callable, Dict, Any, Awaitable
 import uvicorn
 from aiogram.types import Update
 
+from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
+
+# Меню-клавіатура
+main_menu = ReplyKeyboardMarkup(
+    keyboard=[
+        [KeyboardButton(text="Пошук🔍"), KeyboardButton(text="Список серіалів📺"), KeyboardButton(text="За жанром")],
+        [KeyboardButton(text="Мультики👱‍♀️"), KeyboardButton(text="Фільми")],
+        [KeyboardButton(text="Запросити друга🤜🤛")]
+    ],
+    resize_keyboard=True
+)
+
 # Змінні середовища
 API_TOKEN = os.getenv("BOT_TOKEN")
 WEBHOOK_URL = os.getenv("WEBHOOK_URL")
@@ -59,12 +71,17 @@ dp.message.middleware(SubscriptionMiddleware())
 # Обробники команд
 @dp.message(Command("start"))
 async def send_welcome(message: types.Message):
-    await message.reply("✅ Ви підписані! Ласкаво просимо до бота!")
+    await message.answer("✅ Ви підписані! Ласкаво просимо до бота!", reply_markup=main_menu)
+
+@dp.message(Command("help"))
+async def help_handler(message: types.Message):
+    await message.answer("❓ Натисніть /menu, щоб побачити всі доступні функції.", reply_markup=main_menu)
+
 
 @dp.message(F.text == "Меню")
 @dp.message(Command("menu"))
 async def menu_handler(message: types.Message):
-    await message.reply("Ось ваше меню.")
+    await message.answer("Ось ваше меню:", reply_markup=main_menu)
 
 @dp.message(F.text == "Пошук")
 @dp.message(Command("poisk"))
