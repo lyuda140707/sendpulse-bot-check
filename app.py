@@ -4,7 +4,7 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from aiogram import Bot, Dispatcher, types, F
 from aiogram.types import TelegramObject, InlineKeyboardMarkup, InlineKeyboardButton
-from aiogram.dispatcher.middlewares.base import BaseMiddleware
+from aiogram.middleware.base import BaseMiddleware
 from aiogram.filters import Command
 from aiogram.fsm.storage.memory import MemoryStorage
 from typing import Callable, Dict, Any, Awaitable
@@ -36,7 +36,7 @@ logging.basicConfig(level=logging.INFO)
 
 # Ініціалізація
 bot = Bot(token=API_TOKEN)
-dp = Dispatcher(storage=MemoryStorage())
+dp = Dispatcher(bot=bot, storage=MemoryStorage())
 app = FastAPI()
 
 # Клавіатура
@@ -90,7 +90,7 @@ async def get_id(message: types.Message):
 async def menu_handler(message: types.Message):
     await message.answer("Ось ваше меню:", reply_markup=main_menu)
 
-@dp.message(F.text == "Пошук")
+@dp.message(F.text == "Пошук🔍")
 @dp.message(Command("poisk"))
 async def search_handler(message: types.Message):
     await message.reply("Функція пошуку.")
