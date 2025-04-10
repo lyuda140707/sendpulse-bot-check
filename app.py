@@ -154,6 +154,16 @@ async def sendpulse_webhook_handler(request: Request):
         logging.error(f"SendPulse error: {e}")
         return JSONResponse(content={"allowed": False})
 
+@app.post("/webhook")
+async def telegram_webhook_handler(request: Request):
+    try:
+        data = await request.json()
+        update = Update.model_validate(data)
+        await dp.feed_update(bot, update)
+    except Exception as e:
+        logging.error(f"Telegram Webhook error: {e}")
+    return {"status": "ok"}
+
 @app.on_event("startup")
 async def on_startup():
     await bot.set_webhook(WEBHOOK_URL, drop_pending_updates=True)
