@@ -4,7 +4,7 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from aiogram import Bot, Dispatcher, types, F
 from aiogram.types import TelegramObject, InlineKeyboardMarkup, InlineKeyboardButton
-from aiogram.middleware.base import BaseMiddleware
+from aiogram.dispatcher.middlewares.base import BaseMiddleware
 from aiogram.filters import Command
 from aiogram.fsm.storage.memory import MemoryStorage
 from typing import Callable, Dict, Any, Awaitable
@@ -36,7 +36,7 @@ logging.basicConfig(level=logging.INFO)
 
 # Ініціалізація
 bot = Bot(token=API_TOKEN)
-dp = Dispatcher(bot=bot, storage=MemoryStorage())
+dp = Dispatcher(storage=MemoryStorage())
 app = FastAPI()
 
 # Клавіатура
