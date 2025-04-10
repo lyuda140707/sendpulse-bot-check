@@ -84,6 +84,14 @@ async def help_handler(message: types.Message):
 @dp.message(Command("id"))
 async def get_id(message: types.Message):
     await message.answer(f"Ваш Telegram ID: {message.from_user.id}")
+    
+    @dp.message(Command("my_status"))
+async def my_status(message: types.Message):
+    try:
+        chat_member = await bot.get_chat_member(GROUP_CHAT_ID, message.from_user.id)
+        await message.answer(f"📋 Ваш статус у групі: {chat_member.status}")
+    except Exception as e:
+        await message.answer(f"❌ Помилка перевірки: {e}")
 
 @dp.message(F.text == "Меню")
 @dp.message(Command("menu"))
