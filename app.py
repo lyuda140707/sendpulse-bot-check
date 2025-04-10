@@ -10,15 +10,14 @@ from aiogram.fsm.storage.memory import MemoryStorage
 from typing import Callable, Dict, Any, Awaitable
 import uvicorn
 from aiogram.types import Update
-
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 
 # Меню-клавіатура
 main_menu = ReplyKeyboardMarkup(
     keyboard=[
         [KeyboardButton(text="Пошук🔍"), KeyboardButton(text="Список серіалів📺"), KeyboardButton(text="За жанром")],
-        [KeyboardButton(text="Мультики👱‍♀️"), KeyboardButton(text="Фільми")],
-        [KeyboardButton(text="Запросити друга🤜🤛")]
+        [KeyboardButton(text="Мультики👧"), KeyboardButton(text="Фільми")],
+        [KeyboardButton(text="Запросити друга🢜🢛")]
     ],
     resize_keyboard=True
 )
@@ -28,6 +27,9 @@ API_TOKEN = os.getenv("BOT_TOKEN")
 WEBHOOK_URL = os.getenv("WEBHOOK_URL")
 GROUP_CHAT_ID = '-1002591662949'
 GROUP_URL = 'https://t.me/proKinotochka'
+
+# Список дозволених користувачів (заміни на свій ID)
+allowed_users = [123456789]
 
 # Логування
 logging.basicConfig(level=logging.INFO)
@@ -61,25 +63,27 @@ class SubscriptionMiddleware(BaseMiddleware):
     ) -> Any:
         if isinstance(event, types.Message):
             if not await check_subscription(event.from_user.id):
-                await event.reply("🚫 Щоб користуватись ботом, підпишіться на групу:", reply_markup=subscribe_kb)
+                await event.reply("❌ Щоб користуватись ботом, підпишіться на групу:", reply_markup=subscribe_kb)
                 return
         return await handler(event, data)
 
 dp.message.middleware(SubscriptionMiddleware())
 
 # Обробники команд
-@dp.message(F.text.in_(["/start", "start"]))
+@dp.message(Command("start"))
 async def send_welcome(message: types.Message):
     if await check_subscription(message.from_user.id):
         await message.answer("✅ Ви підписані! Ласкаво просимо до бота!\nОбирай жанр, або натисни «Меню» 👇", reply_markup=main_menu)
     else:
-        await message.answer("🚫 Щоб користуватись ботом, підпишіться на групу:", reply_markup=subscribe_kb)
-
+        await message.answer("❌ Щоб користуватись ботом, підпишіться на групу:", reply_markup=subscribe_kb)
 
 @dp.message(Command("help"))
 async def help_handler(message: types.Message):
     await message.answer("❓ Натисніть /menu, щоб побачити всі доступні функції.", reply_markup=main_menu)
 
+@dp.message(Command("id"))
+async def get_id(message: types.Message):
+    await message.answer(f"Ваш Telegram ID: {message.from_user.id}")
 
 @dp.message(F.text == "Меню")
 @dp.message(Command("menu"))
@@ -122,7 +126,10 @@ async def view_handler(message: types.Message):
     await message.reply("📺 Перегляд серіалів.")
 
 @dp.message()
-async def fallback_handler(message: types.Message):
+async def check_user(message: types.Message):
+    if message.from_user.id not in allowed_users:
+        await message.answer("⛔️ У вас немає доступу до цього бота.")
+        return
     await message.reply("ℹ️ Невідома команда. Використовуйте меню або кнопки.")
 
 @app.post("/sendpulse-webhook")
