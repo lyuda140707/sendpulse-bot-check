@@ -158,10 +158,17 @@ async def sendpulse_webhook_handler(request: Request):
 async def telegram_webhook_handler(request: Request):
     try:
         data = await request.json()
-        update = Update.model_validate(data)
-        await dp.feed_update(bot, update)
+
+        # Перевіряємо, чи це точно Telegram-оновлення
+        if isinstance(data, dict) and "update_id" in data:
+            update = Update.model_validate(data)
+            await dp.feed_update(bot, update)
+        else:
+            logging.warning(f"❌ Отримано не Telegram-дані. Пропускаємо: {data}")
+            
     except Exception as e:
         logging.error(f"Telegram Webhook error: {e}")
+    
     return {"status": "ok"}
 
 @app.on_event("startup")
