@@ -85,7 +85,7 @@ async def help_handler(message: types.Message):
 async def get_id(message: types.Message):
     await message.answer(f"Ваш Telegram ID: {message.from_user.id}")
     
-    @dp.message(Command("my_status"))
+@dp.message(Command("my_status"))
 async def my_status(message: types.Message):
     try:
         chat_member = await bot.get_chat_member(GROUP_CHAT_ID, message.from_user.id)
