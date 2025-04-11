@@ -28,9 +28,6 @@ WEBHOOK_URL = os.getenv("WEBHOOK_URL")
 GROUP_CHAT_ID = '-1002581980115'
 GROUP_URL = 'https://t.me/proKinotochkaGroup'
 
-# Список дозволених користувачів (заміни на свій ID)
-allowed_users = [123456789]
-
 # Логування
 logging.basicConfig(level=logging.INFO)
 
@@ -150,8 +147,8 @@ async def view_handler(message: types.Message):
 
 @dp.message()
 async def check_user(message: types.Message):
-    if message.from_user.id not in allowed_users:
-        await message.answer("⛔️ У вас немає доступу до цього бота.")
+    if not await check_subscription(message.from_user.id):
+        await message.answer("❌ Щоб користуватись ботом, підпишіться на групу:", reply_markup=subscribe_kb)
         return
     await message.reply("ℹ️ Невідома команда. Використовуйте меню або кнопки.")
 
