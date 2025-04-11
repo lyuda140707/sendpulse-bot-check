@@ -144,11 +144,11 @@ async def view_handler(message: types.Message):
     await message.reply("📺 Перегляд серіалів.")
 
 @dp.message()
-async def check_user(message: types.Message):
-    if message.from_user.id not in allowed_users:
-        await message.answer("⛔️ У вас немає доступу до цього бота.")
-        return
-    await message.reply("ℹ️ Невідома команда. Використовуйте меню або кнопки.")
+async def fallback_handler(message: types.Message):
+    await message.reply(
+        f"ℹ️ Ви написали: {message.text}\n🆔 Chat ID: `{message.chat.id}`",
+        parse_mode="Markdown"
+    )
 
 @app.post("/sendpulse-webhook")
 async def sendpulse_webhook_handler(request: Request):
