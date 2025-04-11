@@ -167,7 +167,9 @@ async def sendpulse_webhook_handler(request: Request):
 
         if telegram_id:
             is_subscribed = await check_subscription(int(telegram_id))
-            return JSONResponse(content={"allowed": str(is_subscribed).lower()})
+            logging.info(f"🔁 SendPulse API відправляє allowed = {is_subscribed}")
+        return JSONResponse(content={"allowed": str(is_subscribed).lower()})
+
 
         return JSONResponse(content={"allowed": False})
     except Exception as e:
