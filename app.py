@@ -25,8 +25,8 @@ main_menu = ReplyKeyboardMarkup(
 # Змінні середовища
 API_TOKEN = os.getenv("BOT_TOKEN")
 WEBHOOK_URL = os.getenv("WEBHOOK_URL")
-GROUP_CHAT_ID = '-1002564548405'
-GROUP_URL = 'https://t.me/kinotochkanews'
+GROUP_CHAT_ID = '-1002581980115'
+GROUP_URL = 't.me/proKinotochkaGroup'
 
 # Список дозволених користувачів (заміни на свій ID)
 allowed_users = [123456789]
@@ -62,19 +62,19 @@ class SubscriptionMiddleware(BaseMiddleware):
         data: Dict[str, Any]
     ) -> Any:
         if isinstance(event, types.Message):
-            # ✨ Пропустити перевірку підписки для /my_status і /get_chat_id
+            # ✨ Пропустити перевірку для технічних команд
             if event.text and any(
                 cmd in event.text.lower() for cmd in ["/my_status", "/get_chat_id"]
             ):
                 return await handler(event, data)
 
+            # 🔐 Перевірка підписки
             if not await check_subscription(event.from_user.id):
                 await event.reply(
                     "❌ Щоб користуватись ботом, підпишіться на групу:",
                     reply_markup=subscribe_kb
                 )
                 return
-
         return await handler(event, data)
 
 dp.message.middleware(SubscriptionMiddleware())
@@ -144,11 +144,11 @@ async def view_handler(message: types.Message):
     await message.reply("📺 Перегляд серіалів.")
 
 @dp.message()
-async def fallback_handler(message: types.Message):
-    await message.reply(
-        f"ℹ️ Ви написали: {message.text}\n🆔 Chat ID: `{message.chat.id}`",
-        parse_mode="Markdown"
-    )
+async def check_user(message: types.Message):
+    if message.from_user.id not in allowed_users:
+        await message.answer("⛔️ У вас немає доступу до цього бота.")
+        return
+    await message.reply("ℹ️ Невідома команда. Використовуйте меню або кнопки.")
 
 @app.post("/sendpulse-webhook")
 async def sendpulse_webhook_handler(request: Request):
@@ -178,7 +178,6 @@ async def get_chat_id(message: types.Message):
         f"🆔 Chat ID: `{message.chat.id}`\n📌 Тип: {message.chat.type}\n📛 Назва: {message.chat.title}",
         parse_mode="Markdown"
     )
-
 
 @app.post("/webhook")
 async def telegram_webhook_handler(request: Request):
