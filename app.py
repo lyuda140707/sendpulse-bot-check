@@ -60,19 +60,22 @@ class SubscriptionMiddleware(BaseMiddleware):
         handler: Callable[[TelegramObject, Dict[str, Any]], Awaitable[Any]],
         event: TelegramObject,
         data: Dict[str, Any]
-) -> Any:
-    if isinstance(event, types.Message):
-        # ✨ Пропустити перевірку підписки для /my_status і /get_chat_id
-        if event.text and any(
-            cmd in event.text.lower() for cmd in ["/my_status", "/get_chat_id"]
-        ):
-            return await handler(event, data)
+    ) -> Any:
+        if isinstance(event, types.Message):
+            # ✨ Пропустити перевірку підписки для /my_status і /get_chat_id
+            if event.text and any(
+                cmd in event.text.lower() for cmd in ["/my_status", "/get_chat_id"]
+            ):
+                return await handler(event, data)
 
-        if not await check_subscription(event.from_user.id):
-            await event.reply("❌ Щоб користуватись ботом, підпишіться на групу:", reply_markup=subscribe_kb)
-            return
+            if not await check_subscription(event.from_user.id):
+                await event.reply(
+                    "❌ Щоб користуватись ботом, підпишіться на групу:",
+                    reply_markup=subscribe_kb
+                )
+                return
 
-    return await handler(event, data)
+        return await handler(event, data)
 
 dp.message.middleware(SubscriptionMiddleware())
 
