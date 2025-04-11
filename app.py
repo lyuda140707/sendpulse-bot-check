@@ -26,7 +26,7 @@ main_menu = ReplyKeyboardMarkup(
 API_TOKEN = os.getenv("BOT_TOKEN")
 WEBHOOK_URL = os.getenv("WEBHOOK_URL")
 GROUP_CHAT_ID = '-1002581980115'
-GROUP_URL = 't.me/proKinotochkaGroup'
+GROUP_URL = 'https://t.me/proKinotochkaGroup'
 
 # Список дозволених користувачів (заміни на свій ID)
 allowed_users = [123456789]
@@ -48,10 +48,15 @@ subscribe_kb = InlineKeyboardMarkup(inline_keyboard=[
 async def check_subscription(user_id: int) -> bool:
     try:
         chat_member = await bot.get_chat_member(GROUP_CHAT_ID, user_id)
+        
+        # 👇 Додаємо тимчасове логування для діагностики
+        logging.info(f"🔍 get_chat_member result: {chat_member}")
+
         return chat_member.status in ['member', 'administrator', 'creator']
     except Exception as e:
-        logging.error(f"Помилка перевірки підписки: {e}")
+        logging.error(f"❌ Помилка перевірки підписки: {e}")
         return False
+
 
 # Middleware
 class SubscriptionMiddleware(BaseMiddleware):
