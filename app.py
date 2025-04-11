@@ -165,6 +165,14 @@ async def sendpulse_webhook_handler(request: Request):
     except Exception as e:
         logging.error(f"SendPulse error: {e}")
         return JSONResponse(content={"allowed": False})
+        
+@dp.message(Command("get_chat_id"))
+async def get_chat_id(message: types.Message):
+    await message.answer(
+        f"🆔 Chat ID: `{message.chat.id}`\n📌 Тип: {message.chat.type}\n📛 Назва: {message.chat.title}",
+        parse_mode="Markdown"
+    )
+
 
 @app.post("/webhook")
 async def telegram_webhook_handler(request: Request):
