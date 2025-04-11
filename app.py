@@ -25,8 +25,8 @@ main_menu = ReplyKeyboardMarkup(
 # Змінні середовища
 API_TOKEN = os.getenv("BOT_TOKEN")
 WEBHOOK_URL = os.getenv("WEBHOOK_URL")
-GROUP_CHAT_ID = '@proKinotochka'
-GROUP_URL = 'https://t.me/proKinotochka'
+GROUP_CHAT_ID = '1002564548405'
+GROUP_URL = 'https://t.me/kinotochkanews'
 
 # Список дозволених користувачів (заміни на свій ID)
 allowed_users = [123456789]
