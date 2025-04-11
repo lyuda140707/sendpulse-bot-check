@@ -63,8 +63,11 @@ class SubscriptionMiddleware(BaseMiddleware):
     ) -> Any:
         if isinstance(event, types.Message):
             # ✨ Пропустити перевірку підписки для /my_status
-            if event.text and event.text.startswith("/my_status"):
-                return await handler(event, data)
+            if event.text and any(
+                cmd in event.text.lower() for cmd in ["/my_status", "/get_chat_id"]
+):
+        return await handler(event, data)
+
 
             if not await check_subscription(event.from_user.id):
                 await event.reply("❌ Щоб користуватись ботом, підпишіться на групу:", reply_markup=subscribe_kb)
